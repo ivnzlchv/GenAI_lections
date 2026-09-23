@@ -2,6 +2,7 @@
 
 import requests
 import json
+import re
 from typing import List, Dict, Optional
 from decouple import config
 
@@ -115,8 +116,9 @@ class LLMAgent:
         try:
             # Для Ollama может потребоваться дополнительная настройка
             if self.local:
-                # Некоторые модели Ollama могут требовать параметр stream=False
+                # Отключаем streaming и reasoning, чтобы ответ Qwen попадал в content.
                 payload["stream"] = False
+                payload["reasoning_effort"] = "none"
             
             response_data = self._make_api_request(payload)
             
@@ -137,7 +139,17 @@ class LLMAgent:
             # Пытаемся преобразовать ответ в JSON
             action_plan = json.loads(cleaned_json_text)
             plan = action_plan.get("plan", [])
-            return plan
+            if not isinstance(plan, list):
+                return []
+
+            valid_steps = [
+                step
+                for step in plan
+                if isinstance(step, dict)
+                and isinstance(step.get("action"), str)
+                and isinstance(step.get("input"), str)
+            ]
+            return valid_steps if len(valid_steps) == len(plan) else []
             
         except (json.JSONDecodeError, KeyError, Exception) as e:
             print(f"Произошла ошибка при создании плана: {e}")
@@ -152,6 +164,50 @@ class LLMAgent:
             except:
                 pass
             return []
+
+    def _fallback_plan(self, query: str) -> List[Dict]:
+        """Выбирает очевидный инструмент, если малая LLM вернула неверный план."""
+        lowered_query = query.lower()
+
+        phone_match = re.search(r"\+?[\d\s()\-]{7,}", query)
+        if phone_match and any(
+            hint in lowered_query for hint in ("телефон", "номер", "phone")
+        ):
+            return [
+                {"action": "phone_number", "input": phone_match.group().strip()}
+            ]
+
+        if re.search(r"\d\s*(?:[+*/]|-(?=\s*\d))", query):
+            expression_candidates = [
+                part.strip()
+                for part in re.findall(r"[\d\s()+\-*/.]+", query)
+                if re.search(r"\d", part) and re.search(r"[+*/-]", part)
+            ]
+            if expression_candidates:
+                return [
+                    {
+                        "action": "calculator",
+                        "input": max(expression_candidates, key=len),
+                    }
+                ]
+
+        if ".pdf" in lowered_query:
+            return [{"action": "pdf_info", "input": query}]
+
+        current_fact_hints = (
+            "последн",
+            "кто выиграл",
+            "новост",
+            "погода",
+            "сейчас",
+            "сегодня",
+            "current",
+            "latest",
+        )
+        if any(hint in lowered_query for hint in current_fact_hints):
+            return [{"action": "web_search", "input": query}]
+
+        return []
 
     def _generate_final_response(self, user_query: str) -> str:
         """
@@ -174,6 +230,7 @@ class LLMAgent:
         
         if self.local:
             payload["stream"] = False
+            payload["reasoning_effort"] = "none"
         
         try:
             response_data = self._make_api_request(payload)
@@ -192,6 +249,9 @@ class LLMAgent:
         plan = self._ask_llm_for_plan(query)
 
         if not plan:
+            plan = self._fallback_plan(query)
+
+        if not plan:
             print("Инструменты не требуются. Генерирую ответ напрямую.")
             # Генерируем прямой ответ через LLM
             direct_prompt = f"Ответьте на следующий вопрос кратко и информативно: {query}"
@@ -201,6 +261,7 @@ class LLMAgent:
             }
             if self.local:
                 payload["stream"] = False
+                payload["reasoning_effort"] = "none"
             try:
                 response_data = self._make_api_request(payload)
                 return response_data["choices"][0]["message"]["content"]
