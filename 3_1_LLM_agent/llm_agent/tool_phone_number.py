@@ -51,6 +51,12 @@ class PhoneNumberTool:
         if parse_region not in phonenumbers.SUPPORTED_REGIONS:
             raise ValueError(f"Неподдерживаемый код региона: {parse_region}")
 
+        matches = list(phonenumbers.PhoneNumberMatcher(phone_number, parse_region))
+        if len(matches) == 1:
+            return matches[0].number
+        if len(matches) > 1:
+            raise ValueError("Найдено несколько телефонных номеров; укажите один.")
+
         try:
             return phonenumbers.parse(phone_number.strip(), parse_region)
         except NumberParseException as exc:
