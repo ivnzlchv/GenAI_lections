@@ -270,6 +270,7 @@ class LLMAgent:
 
         # --- Шаг 2: Исполнение плана ---
         print(f"План действий: {plan}")
+        tool_results = []
         for step in plan:
             tool_name = step.get('action')
             tool_input = step.get('input')
@@ -278,6 +279,7 @@ class LLMAgent:
                 print(f"Выполняется инструмент: '{tool_name}'")
                 result = self.tools[tool_name].use(tool_input)
                 print(f"Результат: {result}...")
+                tool_results.append((tool_name, result))
                 
                 # Добавляем результат в историю
                 self.conversation_history.append({
@@ -289,6 +291,13 @@ class LLMAgent:
                 print(error_msg)
                 self.conversation_history.append({'role': 'system', 'content': error_msg})
         
+        # Детерминированные инструменты уже сформировали точный ответ. Повторная
+        # генерация малой LLM может исказить число или нормализованный телефон.
+        if tool_results and all(
+            name in {"calculator", "phone_number"} for name, _ in tool_results
+        ):
+            return "\n".join(result for _, result in tool_results)
+
         # --- Шаг 3: Генерация финального ответа ---
         print("Составляю финальный ответ...")
         final_response = self._generate_final_response(query)
