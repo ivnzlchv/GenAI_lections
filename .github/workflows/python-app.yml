@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   build:
@@ -79,3 +80,4 @@ jobs:
       with:
         files: ./3_1_LLM_agent/coverage.xml
         fail_ci_if_error: true
+        use_oidc: true
