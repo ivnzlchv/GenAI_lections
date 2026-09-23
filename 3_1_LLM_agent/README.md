@@ -1,7 +1,5 @@
 # Лабораторная работа 1 — вариант 31
 
-[![Покрытие тестами](https://codecov.io/gh/ivnzlchv/GenAI_lections/branch/lab1-phone-number/graph/badge.svg)](https://codecov.io/gh/ivnzlchv/GenAI_lections)
-
 `PhoneNumberTool` нормализует и валидирует телефонные номера с помощью библиотеки
 [`phonenumbers`](https://pypi.org/project/phonenumbers/). Локальные номера по
 умолчанию разбираются для региона `RU`; международные номера следует передавать с
@@ -42,6 +40,5 @@ print(tool.analyze("+44 20 7946 0958"))
 python -m pytest -v
 ```
 
-Тесты автоматически запускаются в GitHub Actions при каждом `push` и при создании
-или обновлении pull request. После успешного запуска Codecov пересчитывает процент
-покрытия и динамически обновляет бейдж.
+Unit-тесты автоматически запускаются в GitHub Actions при каждом `push` и при
+создании или обновлении pull request. Отчёт о покрытии выводится в журнал запуска.

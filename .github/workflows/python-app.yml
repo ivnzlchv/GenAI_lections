@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   build:
@@ -74,10 +73,3 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         python -m pytest -v -m "not integration" --cov=llm_agent --cov-report=term-missing --cov-report=xml:coverage.xml
         python main.py
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        files: ./3_1_LLM_agent/coverage.xml
-        fail_ci_if_error: true
-        use_oidc: true
