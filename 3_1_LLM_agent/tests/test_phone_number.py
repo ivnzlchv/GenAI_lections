@@ -35,6 +35,13 @@ def test_use_handles_unparseable_input(tool):
     assert tool.use("not a phone").startswith("Ошибка:")
 
 
+def test_use_extracts_number_from_tool_annotation(tool):
+    result = tool.use("8 912 345-67-89 (без пробелов)")
+
+    assert "действителен" in result
+    assert "+79123456789" in result
+
+
 def test_constructor_rejects_unknown_region():
     with pytest.raises(ValueError, match="Неподдерживаемый код региона"):
         PhoneNumberTool(default_region="XX")

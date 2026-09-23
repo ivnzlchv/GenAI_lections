@@ -246,10 +246,10 @@ class LLMAgent:
         print(f"Агент анализирует ваш запрос... (Режим: {'локальный Ollama' if self.local else 'OpenRouter'})")
         
         # --- Шаг 1: Планирование ---
-        plan = self._ask_llm_for_plan(query)
+        plan = self._fallback_plan(query)
 
         if not plan:
-            plan = self._fallback_plan(query)
+            plan = self._ask_llm_for_plan(query)
 
         if not plan:
             print("Инструменты не требуются. Генерирую ответ напрямую.")
