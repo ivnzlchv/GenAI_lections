@@ -8,6 +8,7 @@ from decouple import config # Импортируем для чтения .env
 # Импортируем наши инструменты
 from .tool_calculator import CalculatorTool
 from .tool_websearch import WebSearchTool
+from .tool_phone_number import PhoneNumberTool
 
 class LLMAgent:
     """
@@ -30,6 +31,7 @@ class LLMAgent:
         self.tools = {
             "calculator": CalculatorTool(),
             "web_search": WebSearchTool(),
+            "phone_number": PhoneNumberTool(),
         }
         self.conversation_history = []
     
@@ -45,6 +47,7 @@ class LLMAgent:
         Available tools:
         - **calculator**: For any math-related questions (numbers, calculations). Use it with the full expression.
         - **web_search**: For finding any information about the real world (current events, facts, definitions). Use it with the user's question or a clear search query.
+        - **phone_number**: For validating and normalizing phone numbers. Pass only the phone number, including its country code when known.
 
         Your response MUST be ONLY a JSON object of the following format.
         If one or more tools are needed to answer, return JSON of this structure:
